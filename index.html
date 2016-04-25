@@ -1,30 +1,63 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<style>
+
+.zips {
+  fill: none;
+  fill-opacity: .8;
+  stroke: #fff;
+  stroke-linejoin: round;
+}
+
+</style>
 <body>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="http://d3js.org/topojson.v1.min.js"></script>
-<script src="http://rawgithub.com/markmarkoh/datamaps/master/dist/datamaps.none.min.js"></script>
-<div id="afghan" style="height: 500px; width: 900px;"></div>
 <script>
-    var map = new Datamap({
-        element: document.getElementById('container'),
-        geographyConfig: {
-            dataUrl: '/custom.json'
-        },
-        scope: 'custom',
-        setProjection: function(element, options) {
-            var projection, path;
-            projection = d3.geo.albersUsa()
-                .center([long, lat])
-                .scale(element.offsetWidth)
-                .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
-}
-            path = d3.geo.path()
-                .projection( projection );
 
-            return {path: path, projection: projection};
-        }
-    });
+var width = 960,
+    height = 500;
+
+var fill = d3.scale.log()
+    .domain([10, 500])
+    .range(["brown", "steelblue"]);
+
+var hover = d3.scale.log()
+    .domain([10, 500])
+    .range(["red", "blue"]);
+
+var path = d3.geo.path();
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+//load in custom map that shows zip codes
+d3.json("zips_us_topo.json", function(error, us) {
+  if (error) throw error;
+
+  svg.append("g")
+      .attr("class", "counties")
+    .selectAll("path")
+      .data(topojson.feature(us, us.objects.zip_codes_for_the_usa).features)
+    .enter().append("path")
+      .attr("d", path)
+      .style("fill", function(d) { return fill(path.area(d)); })
+      .on('mouseover',function(d,i){
+        d3.select(this.parentNode.appendChild(this)).transition().style({'fill':'#FFF'});
+      })
+      .on('mouseout',function(d,i){
+        d3.select(this.parentNode.appendChild(this)).transition().style("fill",function(d) { return fill(path.area(d)); });
+      })
+      ;
+
+  svg.append("path")
+      .datum(topojson.mesh(us, us.objects.zip_codes_for_the_usa, function(a, b) { return a.id !== b.id; }))
+      .attr("class", "zips")
+      .attr("d", path)
+      ;
+
+
+});
+
 </script>
-</body>
-</html>
